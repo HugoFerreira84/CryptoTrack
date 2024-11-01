@@ -1,0 +1,43 @@
+/* Custom styles */
+.stock-card {
+    @apply transform transition-all duration-200;
+}
+
+.stock-card:hover {
+    @apply -translate-y-1 shadow-lg;
+}
+
+.stock-indicator {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.stock-indicator.positive {
+    @apply bg-green-100 text-green-800;
+}
+
+.stock-indicator.negative {
+    @apply bg-red-100 text-red-800;
+}
+
+/* Loading animation */
+.loading-skeleton {
+    @apply animate-pulse bg-gray-700 rounded;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+}

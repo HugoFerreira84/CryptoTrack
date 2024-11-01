@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Criptomoedas</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-900 text-white h-screen">
+
+    <!-- Navbar Lateral Dinâmica -->
+    <div class="flex">
+        <aside
+            class="bg-gray-800 w-64 min-h-screen p-5 transition-transform transform duration-300 overflow-y-auto scroll-smooth fixed top-0 left-0"
+            id="sidebar">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold">CryptoTrack</h2>
+                <button id="closeSidebar" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <nav class="mt-10">
+                <ul class="space-y-4">
+                    <li><a href="#overview"
+                            class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Visão Geral</a>
+                    </li>
+                    <li><a href="#table"
+                            class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Tabela de
+                            Criptos</a></li>
+                    <li><a href="#alerts"
+                            class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Alertas de
+                            Preço</a></li>
+                    <li><a href="#portfolio"
+                            class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Portfólio</a>
+                    </li>
+                    <li><a href="#charts"
+                            class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Gráficos</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal da Dashboard -->
+        <main class="flex-1 p-10 ml-64 p-6">
+            <!-- Botão de Expansão da Navbar -->
+            <header class="flex items-center justify-between mb-8">
+                <button id="openSidebar" class="text-gray-400 hover:text-white">
+                    ☰
+                </button>
+                <h1 class="text-4xl font-bold">Dashboard de Criptomoedas</h1>
+            </header>
+
+            <!-- Visão Geral do Mercado -->
+            <section id="overview" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-10">
+                <!-- Cartões de Visão Geral para Cada Criptomoeda -->
+                <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold">Bitcoin (BTC)</h3>
+                    <p id="btcPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="btcChange" class="text-md">Variação: 0%</p>
+                </div>
+                <div class="bg-gradient-to-r from-green-400 via-teal-500 to-blue-500 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold">Ethereum (ETH)</h3>
+                    <p id="ethPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="ethChange" class="text-md">Variação: 0%</p>
+                </div>
+                <div class="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold">Polkadot (DOT)</h3>
+                    <p id="dotPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="dotChange" class="text-md">Variação: 0%</p>
+                </div>
+                <div class="bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold">Polygon (MATIC)</h3>
+                    <p id="maticPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="maticChange" class="text-md">Variação: 0%</p>
+                </div>
+                <div class="bg-gradient-to-r from-pink-400 via-purple-500 to-blue-500 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold">Dogecoin (DOGE)</h3>
+                    <p id="dogePrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="dogeChange" class="text-md">Variação: 0%</p>
+                </div>
+                <div class="bg-gradient-to-r from-red-400 via-yellow-500 to-orange-500 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold">Solana (SOL)</h3>
+                    <p id="solPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="solChange" class="text-md">Variação: 0%</p>
+                </div>
+                <div class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold">Uniswap (UNI)</h3>
+                    <p id="uniPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="uniChange" class="text-md">Variação: 0%</p>
+                </div>
+            </section>
+
+            <!-- Tabela de Criptomoedas -->
+            <section id="table" class="mb-10">
+                <h2 class="text-2xl font-semibold mb-4">Tabela de Criptomoedas</h2>
+                <table id="assetTable" class="display w-full text-white bg-gray-800">
+                    <thead>
+                        <tr class="bg-gray-700 text-gray-200">
+                            <th>Cripto</th>
+                            <th>Nome</th>
+                            <th>Preço</th>
+                            <th>Variação (%)</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetTableBody" class="text-gray-600 text-1xl bg-gray-900  text-center">
+                        <!-- Dados serão inseridos aqui dinamicamente -->
+                    </tbody>
+                </table>
+            </section>
+            <!-- Seção de Alertas de Preço -->
+            <section id="alerts" class="mb-10">
+                <h2 class="text-2xl font-semibold mb-4">Alertas de Preço</h2>
+                <form id="priceAlertForm" class="bg-gray-800 p-4 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="assetSymbol" class="block text-sm font-medium text-gray-400">Cripto</label>
+                            <input type="text" id="assetSymbol"
+                                class="mt-1 block w-full rounded-md bg-gray-700 text-white"
+                                placeholder="Ex: BTC, ETH, DOT">
+                        </div>
+                        <div>
+                            <label for="alertPrice" class="block text-sm font-medium text-gray-400">Preço Alvo</label>
+                            <input type="number" step="0.01" id="alertPrice"
+                                class="mt-1 block w-full rounded-md bg-gray-700 text-white" placeholder="Ex: 50000.00">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit"
+                                class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">Definir
+                                Alerta</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="alertsList" class="mt-4 space-y-2">
+                    <!-- Alertas definidos serão exibidos aqui -->
+                </div>
+            </section>
+
+            <!-- Seção de Simulador de Portfólio -->
+            <section id="portfolio" class="mb-10">
+                <h2 class="text-2xl font-semibold mb-4">Simulador de Portfólio</h2>
+                <form id="portfolioForm" class="bg-gray-800 p-4 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="portfolioAssetSymbol"
+                                class="block text-sm font-medium text-gray-400">Cripto</label>
+                            <input type="text" id="portfolioAssetSymbol"
+                                class="mt-1 block w-full rounded-md bg-gray-700 text-white"
+                                placeholder="Ex: BTC, ETH, DOT">
+                        </div>
+                        <div>
+                            <label for="portfolioQuantity"
+                                class="block text-sm font-medium text-gray-400">Quantidade</label>
+                            <input type="number" step="0.0001" id="portfolioQuantity"
+                                class="mt-1 block w-full rounded-md bg-gray-700 text-white" placeholder="Ex: 1.5">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit"
+                                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Adicionar
+                                ao Portfólio</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold mb-2">Ativos no Portfólio</h3>
+                    <div id="portfolioList" class="space-y-2">
+                        <!-- Ativos do portfólio serão exibidos aqui -->
+                    </div>
+                    <p id="portfolioTotal" class="text-green-500 text-lg font-semibold mt-4">Valor Total: $0.00</p>
+                </div>
+            </section>
+
+            <!-- Seção de Gráficos de Preço -->
+            <section id="charts" class="mb-10">
+                <h2 class="text-2xl font-semibold mb-4">Histórico de Preço</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <canvas id="chartBTC" class="w-full h-64"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <canvas id="chartETH" class="w-full h-64"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <canvas id="chartDOT" class="w-full h-64"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <canvas id="chartMATIC" class="w-full h-64"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <canvas id="chartDOGE" class="w-full h-64"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <canvas id="chartSOL" class="w-full h-64"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <canvas id="chartUNI" class="w-full h-64"></canvas>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script>
+        // Navbar Lateral - Efeitos de Expansão/Colapso
+        const sidebar = document.getElementById('sidebar');
+        const openSidebar = document.getElementById('openSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+
+        openSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+        });
+    </script>
+</body>
+
+</html>
