@@ -41,3 +41,43 @@
 ::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-500;
 }
+
+/* Sidebar ocupa a altura total da tela e é fixa no lado esquerdo */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 16rem; /* 64 */
+    height: 100vh;
+    background-color: #2d3748; /* bg-gray-800 */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Configuração para dispositivos menores */
+@media (max-width: 768px) {
+    /* Esconde a sidebar em dispositivos menores */
+    #sidebar {
+        transform: translateX(-100%);
+        width: 100%; /* Preenche largura ao deslizar */
+        z-index: 50;
+    }
+
+    /* Centraliza o conteúdo principal */
+    main {
+        margin-left: 0;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Para telas médias e maiores, manter sidebar visível */
+@media (min-width: 769px) {
+    #sidebar {
+        transform: translateX(0);
+    }
+
+    main {
+        margin-left: 16rem; /* Espaço da sidebar */
+    }
+}
+

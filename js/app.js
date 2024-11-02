@@ -1,144 +1,76 @@
-// Captura todos os links com a classe `smooth-scroll`
-document.querySelectorAll('.smooth-scroll').forEach(link => {
-    link.addEventListener('click', function(event) {
-        event.preventDefault(); // Evita o comportamento padrão do link
-        const targetId = this.getAttribute('href').substring(1); // Obtém o ID do alvo (sem #)
-        const targetElement = document.getElementById(targetId);
+document.addEventListener('DOMContentLoaded', () => {
+    const marketCards = document.getElementById('marketCards');
+    const coinSearch = document.getElementById('coinSearch');
 
-        if (targetElement) {
-            window.scrollTo({
-                top: targetElement.offsetTop,
-                behavior: 'smooth'
-            });
-        }
-    });
-});
-
-$(document).ready(function () {
-    // Inicializa DataTable
-    $('#assetTable').DataTable();
-
-    // Função de atualização da dashboard
-    async function updateDashboard() {
-        const cryptoData = await fetchCryptoData();
-
-        // Atualiza visão geral, tabela e gráficos
-        updateOverviewCards(cryptoData);
-        renderTable(cryptoData);
-        updateCharts(cryptoData);
-        checkAlerts(cryptoData); // Verifica os alertas de preço
+    // Função para criar um novo card
+    function createCard(name, symbol, price, change) {
+        const colorClasses = 'bg-gradient-to-r from-pink-500 to-purple-500';
+        return `
+            <div class="${colorClasses} p-6 rounded-lg shadow-lg relative" data-symbol="${symbol}">
+                <button class="absolute top-2 right-2 text-white" onclick="removeCard('${symbol}')">✕</button>
+                <h3 class="text-xl font-semibold">${name} (${symbol.toUpperCase()})</h3>
+                <p class="text-3xl font-bold mt-2">$${price.toFixed(2)}</p>
+                <p class="text-md">Variação: ${change.toFixed(2)}%</p>
+            </div>
+        `;
     }
 
-    // Atualiza dashboard a cada 60 segundos para evitar limite de requisição
-    setInterval(updateDashboard, 60000);
-    updateDashboard();
-
-    // Eventos de submissão para alertas e portfólio
-    $('#priceAlertForm').submit(handlePriceAlertSubmit);
-    $('#portfolioForm').submit(handlePortfolioSubmit);
-});
-
-// IDs e cores dos gráficos
-const cryptoCharts = {
-    BTC: { id: 'chartBTC', label: 'Bitcoin', color: '#facc15' },
-    ETH: { id: 'chartETH', label: 'Ethereum', color: '#10b981' },
-    DOT: { id: 'chartDOT', label: 'Polkadot', color: '#6366f1' },
-    MATIC: { id: 'chartMATIC', label: 'Polygon', color: '#f472b6' },
-    DOGE: { id: 'chartDOGE', label: 'Dogecoin', color: '#f59e0b' },
-    SOL: { id: 'chartSOL', label: 'Solana', color: '#9333ea' },
-    UNI: { id: 'chartUNI', label: 'Uniswap', color: '#ec4899' }
-};
-
-// Inicializa gráficos com linhas e cores distintas
-function initializeCharts() {
-    Object.keys(cryptoCharts).forEach(symbol => {
-        const { id, label, color } = cryptoCharts[symbol];
-        const ctx = document.getElementById(id).getContext('2d');
-        
-        cryptoCharts[symbol].chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: label,
-                    data: [],
-                    borderColor: color,
-                    backgroundColor: `${color}33`, // Opacidade leve para preenchimento
-                    fill: true,
-                    tension: 0.4 // Curvatura da linha para suavidade
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        grid: { display: false }
-                    },
-                    y: {
-                        beginAtZero: false,
-                        grid: { color: '#374151' }
-                    }
-                },
-                plugins: {
-                    legend: { display: true },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
-                            }
-                        }
-                    }
-                }
+    // Função para buscar dados de uma moeda específica
+    async function fetchCoinData(coinId) {
+        try {
+            const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinId}`);
+            const data = await response.json();
+            if (data.length > 0) {
+                const { name, symbol, current_price, price_change_percentage_24h } = data[0];
+                const cardHTML = createCard(name, symbol, current_price, price_change_percentage_24h);
+                marketCards.insertAdjacentHTML('beforeend', cardHTML);
+            } else {
+                alert("Moeda não encontrada.");
             }
-        });
-    });
-}
+        } catch (error) {
+            console.error("Erro ao buscar dados da moeda:", error);
+        }
+    }
 
-// Atualiza os dados dos gráficos com novas informações
-function updateCharts(cryptoData) {
-    const currentTime = new Date().toLocaleTimeString();
+    // Função para remover um card
+    window.removeCard = function (symbol) {
+        const card = document.querySelector(`[data-symbol="${symbol}"]`);
+        if (card) {
+            card.remove();
+        }
+    };
 
-    cryptoData.forEach(asset => {
-        if (cryptoCharts[asset.symbol]) {
-            const chart = cryptoCharts[asset.symbol].chart;
-            chart.data.labels.push(currentTime);
-            chart.data.datasets[0].data.push(asset.price);
-
-            // Limita o número de pontos no gráfico
-            if (chart.data.labels.length > 15) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
+    // Evento de busca de moeda
+    coinSearch.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const coinId = coinSearch.value.trim().toLowerCase();
+            if (coinId) {
+                fetchCoinData(coinId);
+                coinSearch.value = '';
             }
-
-            chart.update();
         }
     });
-}
+});
 
-// Inicializa os gráficos ao carregar a página
-initializeCharts();
-
-
-/** Função para Buscar Dados de Criptomoedas com Proxy para CORS */
+// Função `fetchCryptoData` para buscar dados das criptomoedas principais
 async function fetchCryptoData() {
     const apiUrl = 'https://api.coincap.io/v2/assets';
 
     try {
         const response = await fetch(apiUrl);
-
-        // Verifique se a resposta está ok (código de status 200-299)
         if (!response.ok) {
             throw new Error(`Erro: ${response.status}`);
         }
-
         const data = await response.json();
 
         // Filtra as criptomoedas desejadas
-        const filteredData = data.data.filter(coin => ['bitcoin', 'ethereum', 'polkadot', 'polygon', 'dogecoin', 'solana', 'uniswap'].includes(coin.id));
+        const filteredData = data.data.filter(coin =>
+            ['bitcoin', 'ethereum', 'polkadot', 'polygon', 'dogecoin', 'solana', 'uniswap'].includes(coin.id)
+        );
 
         return filteredData.map(coin => ({
-            symbol: coin.symbol,
+            symbol: coin.symbol.toUpperCase(),
             name: coin.name,
             price: parseFloat(coin.priceUsd),
             change: parseFloat(coin.changePercent24Hr),
@@ -151,163 +83,216 @@ async function fetchCryptoData() {
 }
 
 
-
-/** Atualiza Cartões de Visão Geral */
 function updateOverviewCards(cryptoData) {
-    const ids = { BTC: '#btc', ETH: '#eth', DOT: '#dot', MATIC: '#matic', DOGE: '#doge', SOL: '#sol', UNI: '#uni' };
+    // Mapear os IDs dos elementos no HTML para cada criptomoeda
+    const ids = {
+        BTC: { price: '#btcPrice', change: '#btcChange' },
+        ETH: { price: '#ethPrice', change: '#ethChange' },
+        DOT: { price: '#dotPrice', change: '#dotChange' },
+        MATIC: { price: '#maticPrice', change: '#maticChange' },
+        DOGE: { price: '#dogePrice', change: '#dogeChange' },
+        SOL: { price: '#solPrice', change: '#solChange' },
+        UNI: { price: '#uniPrice', change: '#uniChange' }
+    };
 
+    // Atualizar cada cartão de criptomoeda
     cryptoData.forEach(coin => {
-        $(`${ids[coin.symbol]}Price`).text(`$${coin.price.toFixed(2)}`);
-        $(`${ids[coin.symbol]}Change`).text(`Variação: ${coin.change.toFixed(2)}%`);
-    });
-}
+        if (ids[coin.symbol]) {
+            const priceElement = document.querySelector(ids[coin.symbol].price);
+            const changeElement = document.querySelector(ids[coin.symbol].change);
 
-/** Renderiza Tabela de Criptomoedas */
-function renderTable(cryptoData) {
-    const tableBody = $('#assetTableBody');
-    tableBody.empty();
-    cryptoData.forEach(asset => {
-        tableBody.append(`
-            <tr>
-                <td>${asset.symbol}</td>
-                <td>${asset.name}</td>
-                <td>$${asset.price.toFixed(2)}</td>
-                <td class="${asset.change >= 0 ? 'text-green-500' : 'text-red-500'}">${asset.change.toFixed(2)}%</td>
-                <td>${(asset.volume / 1000000).toFixed(1)}M</td>
-            </tr>
-        `);
-    });
-}
-
-/** Atualiza Gráficos de Todas as Criptomoedas */
-function updateCharts(cryptoData) {
-    const currentTime = new Date().toLocaleTimeString();
-
-    cryptoData.forEach(asset => {
-        if (charts[asset.symbol]) {
-            charts[asset.symbol].data.labels.push(currentTime);
-            charts[asset.symbol].data.datasets[0].data.push(asset.price);
-            charts[asset.symbol].update();
+            // Verificar se os elementos existem antes de definir o conteúdo
+            if (priceElement) {
+                priceElement.textContent = `$${coin.price.toFixed(2)}`;
+            }
+            if (changeElement) {
+                changeElement.textContent = `Variação: ${coin.change.toFixed(2)}%`;
+            }
         }
     });
 }
-// Lista de alertas de preço
-const priceAlerts = [];
 
-// Função para configurar o alerta de preço
-function handlePriceAlertSubmit(event) {
-    event.preventDefault(); // Evita o envio padrão do formulário
-    const symbol = document.getElementById('assetSymbol').value.toUpperCase();
-    const targetPrice = parseFloat(document.getElementById('alertPrice').value);
 
-    // Verifica se ambos o símbolo e o preço alvo estão preenchidos
-    if (symbol && targetPrice) {
-        // Adiciona o alerta à lista de alertas
-        priceAlerts.push({ symbol, targetPrice });
-        // Adiciona o alerta à interface com estilo aprimorado
-        document.getElementById('alertsList').innerHTML += `
-            <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 flex justify-between items-center">
-                <span class="text-gray-300">Alerta para <span class="font-semibold text-white">${symbol}</span> ao preço de <span class="font-semibold text-green-400">$${targetPrice.toFixed(2)}</span></span>
-                <button onclick="removeAlert('${symbol}', ${targetPrice})" class="text-red-500 hover:text-red-400 font-semibold">&times;</button>
-            </div>
-        `;
+// Garante que o código seja executado após o carregamento completo do DOM
+document.addEventListener('DOMContentLoaded', () => {
+    // Acessa o botão de logout
+    const logoutButton = document.getElementById('logoutButton');
+
+    // Verifica se o botão de logout existe antes de adicionar o evento
+    if (logoutButton) {
+        logoutButton.addEventListener('click', function () {
+            // Lógica de logout
+            alert("Você foi deslogado com sucesso!");
+            window.location.href = "index.html";
+        });
     }
 
-    // Limpa os campos do formulário após definir o alerta
-    document.getElementById('assetSymbol').value = '';
-    document.getElementById('alertPrice').value = '';
-}
+    // Função para renderizar a tabela de criptomoedas
+    function renderTable(cryptoData) {
+        const tableBody = document.getElementById('assetTableBody');
 
-// Função para remover alerta da lista
-function removeAlert(symbol, targetPrice) {
-    // Filtra e atualiza a lista de alertas, removendo o alerta específico
-    const alertIndex = priceAlerts.findIndex(alert => alert.symbol === symbol && alert.targetPrice === targetPrice);
-    if (alertIndex !== -1) {
-        priceAlerts.splice(alertIndex, 1);
+        // Verifica se o elemento `tableBody` existe
+        if (tableBody) {
+            tableBody.innerHTML = '';  // Limpa o conteúdo da tabela
+
+            // Adiciona dados à tabela
+            cryptoData.forEach(asset => {
+                tableBody.insertAdjacentHTML('beforeend', `
+                    <tr>
+                        <td>${asset.symbol}</td>
+                        <td>${asset.name}</td>
+                        <td>$${asset.price.toFixed(2)}</td>
+                        <td class="${asset.change >= 0 ? 'text-green-500' : 'text-red-500'}">${asset.change.toFixed(2)}%</td>
+                        <td>${(asset.volume / 1000000).toFixed(1)}M</td>
+                    </tr>
+                `);
+            });
+        }
     }
-    // Atualiza a interface
-    updateAlertListDisplay();
-}
 
-// Função para atualizar a exibição dos alertas
-function updateAlertListDisplay() {
-    const alertsList = document.getElementById('alertsList');
-    alertsList.innerHTML = '';
-    priceAlerts.forEach(alert => {
-        alertsList.innerHTML += `
-            <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 flex justify-between items-center">
-                <span class="text-gray-300">Alerta para <span class="font-semibold text-white">${alert.symbol}</span> ao preço de <span class="font-semibold text-green-400">$${alert.targetPrice.toFixed(2)}</span></span>
-                <button onclick="removeAlert('${alert.symbol}', ${alert.targetPrice})" class="text-red-500 hover:text-red-400 font-semibold">&times;</button>
-            </div>
-        `;
+    // Função de atualização da dashboard
+    async function updateDashboard() {
+        const cryptoData = await fetchCryptoData();
+        renderTable(cryptoData);  // Agora `renderTable` está definida antes de ser chamada
+        // Outras atualizações da dashboard, como gráficos e alertas, podem ser adicionadas aqui
+    }
+
+    // Inicia a atualização da dashboard
+    updateDashboard();
+});
+
+
+
+// Configuração dos gráficos das criptomoedas
+const cryptoCharts = {
+    BTC: { id: 'chartBTC', label: 'Bitcoin', color: '#facc15' },
+    ETH: { id: 'chartETH', label: 'Ethereum', color: '#10b981' },
+    DOT: { id: 'chartDOT', label: 'Polkadot', color: '#6366f1' },
+    MATIC: { id: 'chartMATIC', label: 'Polygon', color: '#f472b6' },
+    DOGE: { id: 'chartDOGE', label: 'Dogecoin', color: '#f59e0b' },
+    SOL: { id: 'chartSOL', label: 'Solana', color: '#9333ea' },
+    UNI: { id: 'chartUNI', label: 'Uniswap', color: '#ec4899' }
+};
+
+// Função para inicializar gráficos com verificação para evitar erros
+function initializeCharts() {
+    Object.keys(cryptoCharts).forEach(symbol => {
+        const { id, label, color } = cryptoCharts[symbol];
+        const canvas = document.getElementById(id);
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            cryptoCharts[symbol].chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        backgroundColor: `${color}33`, // Cor com opacidade
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: '#374151' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     });
 }
 
-// Associar a função `handlePriceAlertSubmit` ao evento de envio do formulário
-document.getElementById('priceAlertForm').addEventListener('submit', handlePriceAlertSubmit);
-
-// Lista de ativos no portfólio
-const portfolio = [];
-
-// Função para adicionar ativo ao portfólio
-function handlePortfolioSubmit(event) {
-    event.preventDefault();
-    const symbol = document.getElementById('portfolioAssetSymbol').value.toUpperCase();
-    const quantity = parseFloat(document.getElementById('portfolioQuantity').value);
-
-    if (symbol && quantity) {
-        portfolio.push({ symbol, quantity });
-        updatePortfolioDisplay();
-    }
-
-    // Limpa os campos do formulário
-    document.getElementById('portfolioAssetSymbol').value = '';
-    document.getElementById('portfolioQuantity').value = '';
+// Função para atualizar os gráficos
+function updateCharts(cryptoData) {
+    const currentTime = new Date().toLocaleTimeString();
+    cryptoData.forEach(asset => {
+        const chart = cryptoCharts[asset.symbol]?.chart;
+        if (chart) {
+            chart.data.labels.push(currentTime);
+            chart.data.datasets[0].data.push(asset.price);
+            if (chart.data.labels.length > 15) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            chart.update();
+        }
+    });
 }
 
-// Função para exibir e atualizar ativos do portfólio e valor total
-function updatePortfolioDisplay() {
-    const portfolioList = document.getElementById('portfolioList');
-    portfolioList.innerHTML = '';
-    let totalValue = 0;
+// Função checkAlerts para evitar erro
+function checkAlerts(data) {
+    console.log("Verificando alertas...");
+}
 
-    portfolio.forEach(asset => {
-        const price = getPriceBySymbol(asset.symbol); // Busca o preço atual do ativo
-        const assetValue = price * asset.quantity;
-        totalValue += assetValue;
+// Função para buscar e atualizar a dashboard
+async function updateDashboard() {
+    const cryptoData = await fetchCryptoData();
+    updateOverviewCards(cryptoData);
+    renderTable(cryptoData);
+    updateCharts(cryptoData);
+    checkAlerts(cryptoData);
+}
 
-        // Adiciona o ativo ao portfólio na interface com estilo aprimorado
-        portfolioList.innerHTML += `
-            <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 flex justify-between items-center">
-                <span class="text-gray-300">${asset.symbol} - Quantidade: <span class="font-semibold text-white">${asset.quantity.toFixed(4)}</span> - Valor: <span class="font-semibold text-green-400">$${assetValue.toFixed(2)}</span></span>
-                <button onclick="removePortfolioAsset('${asset.symbol}', ${asset.quantity})" class="text-red-500 hover:text-red-400 font-semibold">&times;</button>
-            </div>
-        `;
+document.addEventListener('DOMContentLoaded', () => {
+    const signupButton = document.getElementById('signupButton');
+    const loginModal = document.getElementById('loginModal');
+    const closeModal = document.getElementById('closeModal');
+
+    // Abre o modal ao clicar no botão de "Cadastrar-se"
+    signupButton.addEventListener('click', () => {
+        loginModal.classList.remove('hidden');
     });
 
-    document.getElementById('portfolioTotal').textContent = `Valor Total: $${totalValue.toFixed(2)}`;
-}
+    // Fecha o modal ao clicar no botão de fechar
+    closeModal.addEventListener('click', () => {
+        loginModal.classList.add('hidden');
+    });
 
-// Função para remover ativo do portfólio
-function removePortfolioAsset(symbol, quantity) {
-    const assetIndex = portfolio.findIndex(asset => asset.symbol === symbol && asset.quantity === quantity);
-    if (assetIndex !== -1) {
-        portfolio.splice(assetIndex, 1);
-    }
-    // Atualiza a interface
-    updatePortfolioDisplay();
-}
+    // Fecha o modal ao clicar fora da caixa de login
+    window.addEventListener('click', (event) => {
+        if (event.target === loginModal) {
+            loginModal.classList.add('hidden');
+        }
+    });
 
-// Função para obter preço atual pelo símbolo
-function getPriceBySymbol(symbol) {
-    const allAssets = Object.values(charts).map(chart => ({
-        symbol: chart.data.datasets[0].label,
-        price: chart.data.datasets[0].data.slice(-1)[0] || 0
-    }));
-    const asset = allAssets.find(item => item.symbol === symbol);
-    return asset ? asset.price : 0;
-}
+    // Função para tratar o login
+    document.getElementById('loginForm').addEventListener('submit', (event) => {
+        event.preventDefault();
 
-// Associar a função `handlePortfolioSubmit` ao evento de envio do formulário
-document.getElementById('portfolioForm').addEventListener('submit', handlePortfolioSubmit);
+        // Captura os valores de username e email
+        const username = document.getElementById('username').value;
 
+        // Salva o username no localStorage para mostrar na dashboard
+        localStorage.setItem('username', username);
+
+        // Redireciona para a dashboard
+        window.location.href = "dashboard.html";
+    });
+});
+
+
+
+// Inicializa os gráficos e atualiza a dashboard
+initializeCharts();
+updateDashboard();
+setInterval(updateDashboard, 60000);

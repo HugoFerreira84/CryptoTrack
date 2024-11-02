@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Criptomoedas</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-900 text-white h-screen">
+
+    <!-- Sidebar - Exibido apenas em telas médias ou maiores -->
+    <aside
+        class="bg-gray-800 w-80 min-h-screen p-5 hidden md:block fixed top-0 left-0 right-12"
+        id="sidebar">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold">CryptoTrack</h2>
+            <button id="closeSidebar" class="text-gray-400 hover:text-white">&times;</button>
+        </div>
+        <nav class="mt-10">
+            <ul class="space-y-4">
+                <li><a href="#overview"
+                        class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Visão Geral</a>
+                </li>
+                <li><a href="#table" class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Tabela
+                        de Criptos</a></li>
+                <li><a href="#alerts"
+                        class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Alertas de
+                        Preço</a></li>
+                <li><a href="#portfolio"
+                        class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Portfólio</a></li>
+                <li><a href="#charts"
+                        class="text-gray-400 hover:text-white block transition-colors smooth-scroll">Gráficos</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Conteúdo Principal da Dashboard -->
+    <main class="flex-1 p-6 w-54 max-w-screen-lg mx-auto">
+        <!-- Cabeçalho com Título e Botão de Logout -->
+        <h1 class="text-3xl font-bold">Dashboard</h1>
+        <header class="flex justify-between items-center mb-8">       
+            <button id="openSidebar" class="text-gray-400 hover:text-white text-2xl">
+                ☰
+            </button>
+            <span id="usernameDisplay" class="text-gray-300"></span>
+            <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded">
+                Logout
+            </button>
+        </header>
+
+        <!-- Visão Geral do Mercado com Centralização -->
+        <section id="overview" class="mb-10 max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold">DashB</h2>
+                <input type="text" id="coinSearch" placeholder="Buscar Moeda..."
+                    class="text-gray-900 w-[5%] p-2 rounded-md bg-gray-200">
+            </div>
+            <div id="marketCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cartões de Visão Geral para Moedas Principais -->
+                <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 rounded-lg shadow-lg relative"
+                    data-symbol="btc">
+                    <button class="absolute top-2 right-2 text-white" onclick="removeCard('btc')">✕</button>
+                    <h3 class="text-xl font-semibold">Bitcoin (BTC)</h3>
+                    <p id="btcPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="btcChange" class="text-md">Variação: 0%</p>
+                </div>
+                <div class="bg-gradient-to-r from-green-400 via-teal-500 to-blue-500 p-6 rounded-lg shadow-lg relative"
+                    data-symbol="eth">
+                    <button class="absolute top-2 right-2 text-white" onclick="removeCard('eth')">✕</button>
+                    <h3 class="text-xl font-semibold">Ethereum (ETH)</h3>
+                    <p id="ethPrice" class="text-3xl font-bold mt-2">$0.00</p>
+                    <p id="ethChange" class="text-md">Variação: 0%</p>
+                </div>
+                <!-- Mais cartões principais... -->
+            </div>
+        </section>
+
+        <!-- Tabela de Criptomoedas com Rolagem Horizontal em Telas Menores -->
+        <section id="table" class="mb-10">
+            <h2 class="text-2xl font-semibold mb-4">Tabela de Criptomoedas</h2>
+            <div class="overflow-x-auto">
+                <table id="assetTable" class="display w-full text-white bg-gray-800">
+                    <thead>
+                        <tr class="bg-gray-700 text-gray-200">
+                            <th>Cripto</th>
+                            <th>Nome</th>
+                            <th>Preço</th>
+                            <th>Variação (%)</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetTableBody" class="text-gray-600 text-1xl bg-gray-900 text-center">
+                        <tr>
+                            <td>BTC</td>
+                            <td>Bitcoin</td>
+                            <td>$50,000.00</td>
+                            <td>+5%</td>
+                            <td>1.2M</td>
+                        </tr>
+                        <tr>
+                            <td>ETH</td>
+                            <td>Ethereum</td>
+                            <td>$4,000.00</td>
+                            <td>-3%</td>
+                            <td>800K</td>
+                        </tr>
+                        <!-- Mais linhas de exemplo -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Seção de Alertas de Preço -->
+        <section id="alerts" class="mb-10">
+            <h2 class="text-2xl font-semibold mb-4">Alertas de Preço</h2>
+            <form id="priceAlertForm" class="bg-gray-800 p-4 rounded-lg">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="assetSymbol" class="block text-sm font-medium text-gray-400">Cripto</label>
+                        <input type="text" id="assetSymbol" class="mt-1 block w-full rounded-md bg-gray-700 text-white"
+                            placeholder="Ex: BTC, ETH, DOT">
+                    </div>
+                    <div>
+                        <label for="alertPrice" class="block text-sm font-medium text-gray-400">Preço Alvo</label>
+                        <input type="number" step="0.01" id="alertPrice"
+                            class="mt-1 block w-full rounded-md bg-gray-700 text-white" placeholder="Ex: 50000.00">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit"
+                            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">Definir
+                            Alerta</button>
+                    </div>
+                </div>
+            </form>
+            <div id="alertsList" class="mt-4 space-y-2">
+                <!-- Alertas definidos serão exibidos aqui -->
+            </div>
+        </section>
+
+        <!-- Seção de Simulador de Portfólio -->
+        <section id="portfolio" class="mb-10">
+            <h2 class="text-2xl font-semibold mb-4">Simulador de Portfólio</h2>
+            <form id="portfolioForm" class="bg-gray-800 p-4 rounded-lg">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="portfolioAssetSymbol" class="block text-sm font-medium text-gray-400">Cripto</label>
+                        <input type="text" id="portfolioAssetSymbol"
+                            class="mt-1 block w-full rounded-md bg-gray-700 text-white" placeholder="Ex: BTC, ETH, DOT">
+                    </div>
+                    <div>
+                        <label for="portfolioQuantity"
+                            class="block text-sm font-medium text-gray-400">Quantidade</label>
+                        <input type="number" step="0.0001" id="portfolioQuantity"
+                            class="mt-1 block w-full rounded-md bg-gray-700 text-white" placeholder="Ex: 1.5">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit"
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Adicionar
+                            ao Portfólio</button>
+                    </div>
+                </div>
+            </form>
+            <div class="mt-4">
+                <h3 class="text-lg font-semibold mb-2">Ativos no Portfólio</h3>
+                <div id="portfolioList" class="space-y-2">
+                    <p>BTC - Quantidade: 1.5 - Valor: $75,000.00</p>
+                    <p>ETH - Quantidade: 3.2 - Valor: $12,800.00</p>
+                </div>
+                <p id="portfolioTotal" class="text-green-500 text-lg font-semibold mt-4">Valor Total: $87,800.00</p>
+            </div>
+        </section>
+
+        <!-- Seção de Gráficos de Preço -->
+        <section id="charts" class="mb-10">
+            <h2 class="text-2xl font-semibold mb-4">Histórico de Preço</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <canvas id="chartBTC" class="w-full h-64"></canvas>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <canvas id="chartETH" class="w-full h-64"></canvas>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <canvas id="chartDOT" class="w-full h-64"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // Navbar Lateral - Efeitos de Expansão/Colapso
+        const sidebar = document.getElementById('sidebar');
+        const openSidebar = document.getElementById('openSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+
+        openSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+        });
+         // Função de logout
+         document.getElementById('logoutButton').addEventListener('click', function () {
+            // Lógica para logout
+            alert("Você foi deslogado com sucesso!");  // Exemplo de mensagem de confirmação
+
+            // Redirecionar para a página de login ou landing page
+            window.location.href = "index.html";
+        });
+    </script>
+</body>
+
+</html>
